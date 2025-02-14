@@ -6,125 +6,98 @@ import {
   Radio,
   RadioGroup,
   Button,
-  Image,
+  Input,
   FormControl,
   FormLabel,
-  Input,
+  useToast,
+  VStack,
+  Icon,
 } from '@chakra-ui/react';
-import axios from 'axios';
+import { FaCcVisa, FaCcMastercard, FaPaypal, FaGooglePay, FaAmazonPay, FaUniversity } from 'react-icons/fa';
+import { SiPhonepe } from 'react-icons/si';
 
 const PaymentPage = () => {
   const [paymentMethod, setPaymentMethod] = useState('creditCard');
-  const [cardDetails, setCardDetails] = useState({
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-  });
+  const [savedCards, setSavedCards] = useState([
+    { id: 1, type: 'Visa', last4: '4242' },
+    { id: 2, type: 'MasterCard', last4: '6789' },
+  ]);
+  const [newCard, setNewCard] = useState({ cardNumber: '', expiryDate: '', cvv: '' });
+  const [upiId, setUpiId] = useState('');
+  const toast = useToast();
 
-  const handlePayment = async () => {
-    try {
-      let response;
-      if (paymentMethod === 'creditCard' || paymentMethod === 'debitCard') {
-        response = await axios.post('/api/pay/credit-card', {
-          amount: 100, // Amount in dollars
-          currency: 'USD',
-          paymentMethodId: 'pm_card_visa', // Test Payment Method ID (you'd use real IDs)
-        });
-      } else if (paymentMethod === 'paypal') {
-        response = await axios.post('/api/pay/paypal', {
-          amount: 100, // Amount in dollars
-          currency: 'USD',
-        });
-        window.location.href = response.data.payment.links[1].href; // Redirect to PayPal
-      } else if (paymentMethod === 'phonePe') {
-        response = await axios.post('/api/pay/phonepe', {
-          amount: 100,
-          currency: 'INR',
-        });
-        // Handle PhonePe payment logic here
-      } else if (paymentMethod === 'googlePay') {
-        response = await axios.post('/api/pay/googlepay', {
-          amount: 100,
-          currency: 'INR',
-        });
-        // Handle Google Pay payment logic here
-      }
-
-      console.log(response.data);
-      alert('Payment successful!');
-    } catch (error) {
-      console.error(error);
-      alert('Payment failed. Please try again.');
+  const handleAddCard = () => {
+    if (newCard.cardNumber && newCard.expiryDate && newCard.cvv) {
+      setSavedCards([...savedCards, { id: savedCards.length + 1, type: 'New Card', last4: newCard.cardNumber.slice(-4) }]);
+      setNewCard({ cardNumber: '', expiryDate: '', cvv: '' });
+      toast({ title: 'Card Added', description: 'Your new card has been saved!', status: 'success', duration: 2000 });
+    } else {
+      toast({ title: 'Error', description: 'Please enter valid card details.', status: 'error', duration: 2000 });
     }
   };
 
+  const handlePayment = () => {
+    if (paymentMethod === 'upi' && !upiId) {
+      toast({ title: 'Error', description: 'Please enter a valid UPI ID.', status: 'error', duration: 2000 });
+      return;
+    }
+    toast({ title: 'Payment Successful', description: 'Your payment has been processed.', status: 'success', duration: 3000 });
+  };
+
   return (
-    <Box p={8}>
+    <Box p={8} maxW="600px" mx="auto">
       <Heading mb={6}>Select Your Payment Method</Heading>
       <Stack spacing={4}>
         <RadioGroup onChange={setPaymentMethod} value={paymentMethod}>
-          <Stack direction="column">
-            <Radio value="creditCard">Credit Card</Radio>
-            <Radio value="debitCard">Debit Card</Radio>
-            <Radio value="phonePe">
-              PhonePe
-              {/* <Image
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/PhonePe-Logo.svg/512px-PhonePe-Logo.svg.png"
-                alt="PhonePe"
-                boxSize="30px"
-                ml={2}
-                display="inline"
-              /> */}
+          <VStack align="start">
+            {savedCards.map((card) => (
+              <Radio key={card.id} value={`card-${card.id}`}>
+                <Icon as={FaCcVisa} w={5} h={5} /> {card.type} •••• {card.last4}
+              </Radio>
+            ))}
+            <Radio value="paypal">
+              <Icon as={FaPaypal} w={5} h={5} /> PayPal
             </Radio>
             <Radio value="googlePay">
-              Google Pay
-              {/* <Image
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Google_Pay_%28GPay%29_Logo.svg/2048px-Google_Pay_%28GPay%29_Logo.svg.png"
-                alt="Google Pay"
-                boxSize="30px"
-                ml={2}
-                display="inline"
-              /> */}
+              <Icon as={FaGooglePay} w={5} h={5} /> Google Pay
             </Radio>
-            <Radio value="paypal">PayPal</Radio>
-          </Stack>
+            <Radio value="phonePe">
+              <Icon as={SiPhonepe} w={5} h={5} /> PhonePe
+            </Radio>
+            <Radio value="amazonPay">
+              <Icon as={FaAmazonPay} w={5} h={5} /> Amazon Pay
+            </Radio>
+            <Radio value="upi">
+              <Icon as={FaUniversity} w={5} h={5} /> UPI Payment
+            </Radio>
+          </VStack>
         </RadioGroup>
 
-        {paymentMethod === 'creditCard' || paymentMethod === 'debitCard' ? (
-          <Stack spacing={4}>
-            <FormControl id="cardNumber">
-              <FormLabel>Card Number</FormLabel>
-              <Input
-                type="text"
-                placeholder="1234 5678 9012 3456"
-                value={cardDetails.cardNumber}
-                onChange={(e) => setCardDetails({ ...cardDetails, cardNumber: e.target.value })}
-              />
-            </FormControl>
-            <FormControl id="expiryDate">
-              <FormLabel>Expiry Date</FormLabel>
-              <Input
-                type="text"
-                placeholder="MM/YY"
-                value={cardDetails.expiryDate}
-                onChange={(e) => setCardDetails({ ...cardDetails, expiryDate: e.target.value })}
-              />
-            </FormControl>
-            <FormControl id="cvv">
-              <FormLabel>CVV</FormLabel>
-              <Input
-                type="text"
-                placeholder="123"
-                value={cardDetails.cvv}
-                onChange={(e) => setCardDetails({ ...cardDetails, cvv: e.target.value })}
-              />
-            </FormControl>
-          </Stack>
-        ) : null}
+        {paymentMethod === 'upi' && (
+          <FormControl>
+            <FormLabel>Enter UPI ID</FormLabel>
+            <Input type="text" placeholder="yourname@upi" value={upiId} onChange={(e) => setUpiId(e.target.value)} />
+          </FormControl>
+        )}
+
+        {paymentMethod.startsWith('card') && (
+          <FormControl>
+            <FormLabel>Enter CVV</FormLabel>
+            <Input type="password" placeholder="123" maxW="100px" />
+          </FormControl>
+        )}
 
         <Button colorScheme="teal" size="lg" onClick={handlePayment}>
           Pay Now
         </Button>
+
+        <Heading size="md" mt={6}>Add a New Card</Heading>
+        <Stack spacing={3}>
+          <Input placeholder="Card Number" value={newCard.cardNumber} onChange={(e) => setNewCard({ ...newCard, cardNumber: e.target.value })} />
+          <Input placeholder="Expiry Date (MM/YY)" value={newCard.expiryDate} onChange={(e) => setNewCard({ ...newCard, expiryDate: e.target.value })} />
+          <Input placeholder="CVV" type="password" value={newCard.cvv} onChange={(e) => setNewCard({ ...newCard, cvv: e.target.value })} />
+          <Button onClick={handleAddCard} colorScheme="blue">Add Card</Button>
+        </Stack>
       </Stack>
     </Box>
   );
