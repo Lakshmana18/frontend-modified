@@ -75,7 +75,7 @@ const Home1 = () => {
         boxShadow="lg"
       >
         <Flex align="center" justify="space-between" maxW="1200px" mx="auto">
-          <Link href="/" aria-label="Home">
+          <Link href="/home1" aria-label="Home">
             <Image src="logo2.0.webp" alt="Logo" boxSize="70px" borderRadius="12px" />
           </Link>
 
